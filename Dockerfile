@@ -9,4 +9,4 @@ COPY ./plugins/docker-workflow.jpi /var/jenkins_home/plugins/
 EXPOSE 4000
 
 # Start SonarQube
-ENTRYPOINT ["/usr/bin/tini" "--", "/usr/local/bin/jenkins.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/jenkins.sh"]
