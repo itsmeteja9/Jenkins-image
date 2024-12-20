@@ -25,28 +25,29 @@ pipeline {
         }
 
         stage('Cleaning up Previous Images from Local Docker Engine') {
-    steps {
-        script {
-            // Initialize build variable to track previous successful builds
-            def build = currentBuild.previousBuild
+            steps {
+                script {
+                    // Initialize build variable to track previous successful builds
+                    def build = currentBuild.previousBuild
 
-            // Loop through previous successful builds (just one in this case)
-            while (build != null && successfulBuilds.size() < 1) {
-                if (build.result == "SUCCESS") {
-                    // Try to remove image associated with the build number
-                    def imageExist = bat(script: "docker images -q ${registry}:${build.number}", returnStdout: true).trim()
+                    // Loop through previous successful builds (just one in this case)
+                    while (build != null) {
+                        if (build.result == "SUCCESS") {
+                            // Try to remove image associated with the build number
+                            def imageExist = bat(script: "docker images -q ${registry}:${build.number}", returnStdout: true).trim()
 
-                    if (imageExist) {
-                        echo "Removing image ${registry}:${build.number}"
-                        bat "docker rmi ${registry}:${build.number}"
-                    } else {
-                        echo "Image ${registry}:${build.number} does not exist, skipping."
+                            if (imageExist) {
+                                echo "Removing image ${registry}:${build.number}"
+                                bat "docker rmi ${registry}:${build.number}"
+                            } else {
+                                echo "Image ${registry}:${build.number} does not exist, skipping."
+                            }
+                            break  // Only remove the image of the most recent successful build
+                        }
+                        build = build.previousBuild
                     }
-                    break
                 }
-                build = build.previousBuild
             }
         }
     }
 }
-    }
