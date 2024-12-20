@@ -43,7 +43,7 @@ pipeline {
                         echo "Last successful build ID: ${lastSuccessfulBuildID}"
                         
                         // Check if the image exists before attempting to remove it
-                        def imageExists = sh(script: "docker images -q $registry:${lastSuccessfulBuildID}", returnStdout: true).trim()
+                        def imageExists = bat(script: "docker images -q $registry:${lastSuccessfulBuildID}", returnStdout: true).trim()
                         
                         if (imageExists) {
                             echo "Removing previous image: $registry:${lastSuccessfulBuildID}"
