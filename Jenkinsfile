@@ -43,31 +43,34 @@ pipeline {
             }
 
         } 
-stage('Cleaning up Previous Image from Local Docker Engine') {
+stage('Cleaning up Previous 10 Images from Local Docker Engine') {
             steps {
                 script {
-                    // Find the last successful build's ID
-                    def lastSuccessfulBuildID = 0
+                    // Initialize a counter for successful builds
+                    def successfulBuilds = []
                     def build = currentBuild.previousBuild
-                    while (build != null) {
+                    // Loop through previous builds to find the successful ones
+                    while (build != null && successfulBuilds.size() < 10) {
                         if (build.result == "SUCCESS") {
-                            lastSuccessfulBuildID = build.id as Integer
-                            break
+                            successfulBuilds.add(build.id as Integer)
                         }
                         build = build.previousBuild
                     }
 
-                    if (lastSuccessfulBuildID > 0) {
-                        println "Removing image from previous successful build: ${registry}:${lastSuccessfulBuildID}"
-                        // Ensure image exists before trying to remove it
-                        def imageExist = bat(script: "docker images -q ${registry}:${lastSuccessfulBuildID}", returnStdout: true).trim()
+                    // Delete images of the last 10 successful builds
+                    successfulBuilds.each { buildID ->
+                        echo "Removing image from build ${buildID}"
+                        def imageExist = bat(script: "docker images -q ${registry}:${buildID}", returnStdout: true).trim()
                         if (imageExist) {
-                            bat "docker rmi ${registry}:${lastSuccessfulBuildID}"
+                            echo "Image ${registry}:${buildID} exists, removing..."
+                            bat "docker rmi ${registry}:${buildID}"
                         } else {
-                            echo "Image ${registry}:${lastSuccessfulBuildID} does not exist locally."
+                            echo "Image ${registry}:${buildID} does not exist."
                         }
-                    } else {
-                        echo "No previous successful build found, skipping cleanup."
+                    }
+
+                    if (successfulBuilds.isEmpty()) {
+                        echo "No previous successful builds found to clean up."
                     }
                 }
             }
