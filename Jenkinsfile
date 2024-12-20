@@ -25,40 +25,26 @@ pipeline {
         }
 
         stage('Cleaning up Previous Images from Local Docker Engine') {
-            steps {
-                script {
-                    // Initialize a counter for successful builds
-                    def successfulBuilds = []
-                    def build = currentBuild.previousBuild
+    steps {
+        script {
+            // Initialize build variable to track previous successful builds
+            def build = currentBuild.previousBuild
 
-                    // Loop through previous builds to find the successful ones
-                    while (build != null && successfulBuilds.size() < 1) {
-                        if (build.result == "SUCCESS") {
-                            successfulBuilds.add(build.number)
-                        }
-                        build = build.previousBuild
-                    }
+            // Loop through previous successful builds (just one in this case)
+            while (build != null && successfulBuilds.size() < 1) {
+                if (build.result == "SUCCESS") {
+                    // Try to remove image associated with the build number
+                    def imageExist = bat(script: "docker images -q ${registry}:${build.number}", returnStdout: true).trim()
 
-                    // If successful builds were found, clean up their images
-                    if (successfulBuilds.isEmpty()) {
-                        echo "No previous successful builds found to clean up."
+                    if (imageExist) {
+                        echo "Removing image ${registry}:${build.number}"
+                        bat "docker rmi ${registry}:${build.number}"
                     } else {
-                        successfulBuilds.each { buildNumber ->
-                            echo "Removing image from build ${buildNumber}"
-
-                            // Check if the image exists using Docker's 'images' command
-                            def imageExist = bat(script: "docker images -q ${registry}:${buildNumber}", returnStdout: true).trim()
-
-                            // If the image exists, remove it
-                            if (imageExist) {
-                                echo "Image ${registry}:${buildNumber} exists, removing..."
-                                bat "docker rmi ${registry}:${buildNumber}"
-                            } else {
-                                echo "Image ${registry}:${buildNumber} does not exist, skipping deletion."
-                            }
-                        }
+                        echo "Image ${registry}:${build.number} does not exist, skipping."
                     }
+                    break
                 }
+                build = build.previousBuild
             }
         }
     }
