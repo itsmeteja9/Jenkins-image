@@ -34,13 +34,15 @@ pipeline {
                     // Get all the image IDs related to this registry (removes previous images)
                     def imageIds = bat(script: "docker images --filter=reference='${registry}:*' -q", returnStdout: true).trim()
 
-                    // If there are any images, remove them (excluding the current image)
+                    // Check if any images exist
                     if (imageIds) {
                         echo "Removing previous images: ${imageIds}"
-                        // Use Windows-compatible cleanup
-                        bat """
-                            FOR %%I IN (${imageIds}) DO docker rmi %%I
-                        """
+                        // Now run the FOR loop correctly in Windows batch script
+                        // Split the imageIds by space and run docker rmi for each image
+                        def imageList = imageIds.split('\n')
+                        imageList.each { imageId ->
+                            bat "docker rmi ${imageId}"
+                        }
                     } else {
                         echo "No previous images found to remove."
                     }
