@@ -25,15 +25,17 @@ pipeline {
             } 
         }
 
-       stage('Cleaning up Previous Images from Local Docker Engine') {
+       stages { 
+        stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Remove all images from the registry, except for the current image being built
-                    def existingImages = bat(script: "docker images --filter=reference='$registry:*' -q", returnStdout: true).trim()
+                    // Get a list of image IDs matching the registry
+                    def imageIds = bat(script: "docker images --filter=reference='itsmeteja9/jenkins-image:*' -q", returnStdout: true).trim()
 
-                    if (existingImages) {
-                        echo "Removing previous images: $existingImages"
-                        bat "docker rmi $existingImages"
+                    // If there are any images, remove them
+                    if (imageIds) {
+                        echo "Removing previous images: ${imageIds}"
+                        bat "docker rmi ${imageIds}"
                     } else {
                         echo "No previous images found to remove."
                     }
