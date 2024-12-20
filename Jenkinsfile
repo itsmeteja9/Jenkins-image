@@ -10,7 +10,7 @@ pipeline {
         stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Get a list of image IDs matching the registry
+                    // Get a list of image IDs matching the registry using `docker images` with `--filter` flag
                     def imageIds = bat(script: "docker images --filter=reference='itsmeteja9/jenkins-image:*' -q", returnStdout: true).trim()
 
                     // If there are any images, remove them
