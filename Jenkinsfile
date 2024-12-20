@@ -24,7 +24,7 @@ pipeline {
             }
         }
 
-        stage('Cleaning up Previous 10 Images from Local Docker Engine') {
+        stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
                     // Initialize a counter for successful builds
@@ -32,7 +32,7 @@ pipeline {
                     def build = currentBuild.previousBuild
 
                     // Loop through previous builds to find the successful ones
-                    while (build != null && successfulBuilds.size() < 10) {
+                    while (build != null && successfulBuilds.size() < 1) {
                         if (build.result == "SUCCESS") {
                             successfulBuilds.add(build.number)
                         }
