@@ -62,7 +62,7 @@ pipeline {
         }
         println lastSuccessfulBuildID
             // Now remove the image
-            bat "docker rmi $registry:${lastSuccessfulBuildID}"
+            bat "docker rmi ${registry}:${lastSuccessfulBuildID}"
         }
     }
 }
