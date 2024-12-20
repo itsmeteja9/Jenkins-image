@@ -43,8 +43,7 @@ pipeline {
             }
 
         } 
-
-         stage('Cleaning up Previous Image from Local Docker Engine') {
+stage('Cleaning up Previous Image from Local Docker Engine') {
             steps {
                 script {
                     // Find the last successful build's ID
@@ -61,9 +60,9 @@ pipeline {
                     if (lastSuccessfulBuildID > 0) {
                         println "Removing image from previous successful build: ${registry}:${lastSuccessfulBuildID}"
                         // Ensure image exists before trying to remove it
-                        def imageExist = sh(script: "docker images -q ${registry}:${lastSuccessfulBuildID}", returnStdout: true).trim()
+                        def imageExist = bat(script: "docker images -q ${registry}:${lastSuccessfulBuildID}", returnStdout: true).trim()
                         if (imageExist) {
-                            sh "docker rmi ${registry}:${lastSuccessfulBuildID}"
+                            bat "docker rmi ${registry}:${lastSuccessfulBuildID}"
                         } else {
                             echo "Image ${registry}:${lastSuccessfulBuildID} does not exist locally."
                         }
