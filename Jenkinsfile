@@ -28,35 +28,21 @@ pipeline {
         stage('Cleaning up Previous Image from Local Docker Engine') {
             steps {
                 script {
-                    // Try to find the last successful build
-                    def lastSuccessfulBuildID = null
-                    def build = currentBuild.previousBuild
-                    while (build != null) {
-                        if (build.result == "SUCCESS") {
-                            lastSuccessfulBuildID = build.id as String
-                            break
-                        }
-                        build = build.previousBuild
-                    }
+                    // Get the previous build number
+                    def previousBuildNumber = currentBuild.number - 1
+                    def previousImageTag = "${registry}:${previousBuildNumber}"
 
-                    if (lastSuccessfulBuildID) {
-                        echo "Last successful build ID: ${lastSuccessfulBuildID}"
-                        
-                        // Check if the image exists before attempting to remove it
-                        def imageExists = bat(script: "docker images -q $registry:${lastSuccessfulBuildID}", returnStdout: true).trim()
-                        
-                        if (imageExists) {
-                            echo "Removing previous image: $registry:${lastSuccessfulBuildID}"
-                            bat "docker rmi $registry:${lastSuccessfulBuildID}"
-                        } else {
-                            echo "Image $registry:${lastSuccessfulBuildID} not found locally."
-                        }
+                    // Check if the image exists locally
+                    def imageExists = bat(script: "docker images -q $previousImageTag", returnStdout: true).trim()
+
+                    if (imageExists) {
+                        echo "Removing previous image: $previousImageTag"
+                        bat "docker rmi $previousImageTag"
                     } else {
-                        echo "No previous successful build found."
+                        echo "Image $previousImageTag not found locally."
                     }
                 }
             }
         }
     }
 }
-
