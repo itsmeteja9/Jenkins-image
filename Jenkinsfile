@@ -25,21 +25,17 @@ pipeline {
             } 
         }
 
-        stage('Cleaning up Previous Image from Local Docker Engine') {
+       stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Get the previous build number
-                    def previousBuildNumber = currentBuild.number - 1
-                    def previousImageTag = "${registry}:${previousBuildNumber}"
+                    // Remove all images from the registry, except for the current image being built
+                    def existingImages = bat(script: "docker images --filter=reference='$registry:*' -q", returnStdout: true).trim()
 
-                    // Check if the image exists locally
-                    def imageExists = bat(script: "docker images -q $previousImageTag", returnStdout: true).trim()
-
-                    if (imageExists) {
-                        echo "Removing previous image: $previousImageTag"
-                        bat "docker rmi $previousImageTag"
+                    if (existingImages) {
+                        echo "Removing previous images: $existingImages"
+                        bat "docker rmi $existingImages"
                     } else {
-                        echo "Image $previousImageTag not found locally."
+                        echo "No previous images found to remove."
                     }
                 }
             }
