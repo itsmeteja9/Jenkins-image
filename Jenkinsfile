@@ -12,7 +12,7 @@ pipeline {
             steps { 
                 script { 
                     // Build the Docker image and tag it with the current build number
-                    dockerImage = docker.build("${registry}:${BUILD_NUMBER}") 
+                    dockerImage = docker.build("${registry}:$BUILD_NUMBER") 
                 }
             } 
         }
@@ -37,9 +37,9 @@ pipeline {
                     // If there are any images, remove them (excluding the current image)
                     if (imageIds) {
                         echo "Removing previous images: ${imageIds}"
-                        // Remove all images except for the current one
+                        // Use Windows-compatible cleanup
                         bat """
-                            docker rmi ${imageIds} || true
+                            FOR %%I IN (${imageIds}) DO docker rmi %%I
                         """
                     } else {
                         echo "No previous images found to remove."
