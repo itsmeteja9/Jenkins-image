@@ -1,71 +1,51 @@
 pipeline { 
-
     environment { 
-
-        registry = "itsmeteja9/jenkins-image" 
-
-        registryCredential = 'dockerjenkinsintegration' 
-
+        registry = "itsmeteja9/jenkins-image"  // Docker registry URL
+        registryCredential = 'dockerjenkinsintegration'  // Jenkins credential for Docker registry
         dockerImage = '' 
-
     }
     agent any 
 
     stages { 
 
-
         stage('Building our image') { 
-
             steps { 
-
                 script { 
-
-                    dockerImage = docker.build registry + ":$BUILD_NUMBER" 
-
+                    // Build the Docker image and tag it with the current build number
+                    dockerImage = docker.build("${registry}:${BUILD_NUMBER}") 
                 }
             } 
         }
 
         stage('Push image to DockerHub') { 
-
             steps { 
-
                 script { 
-
-                    docker.withRegistry( '', registryCredential ) { 
-
+                    // Push the newly built image to Docker Hub
+                    docker.withRegistry('', registryCredential) { 
                         dockerImage.push() 
-
-                 }
-
+                    }
                 } 
-
-            }
-
-        } 
-
-         stage('Cleaning up Previous Image from Local Docker Engine') {
-    steps {
-        script {
-            // Stop and remove the container first
-            // bat "docker stop sonarqube1"
-           // bat "docker rm sonarqube1"
-        def lastSuccessfulBuildID = 0
-        def build = currentBuild.previousBuild
-        while (build != null) {
-            if (build.result == "SUCCESS")
-            {
-                lastSuccessfulBuildID = build.id as Integer
-                break
-            }
-            build = build.previousBuild
+            } 
         }
-        println lastSuccessfulBuildID
-            // Now remove the image
-            bat "docker rmi $registry:${lastSuccessfulBuildID}"
+
+        stage('Cleaning up Previous Images from Local Docker Engine') {
+            steps {
+                script {
+                    // Get all the image IDs related to this registry (removes previous images)
+                    def imageIds = bat(script: "docker images --filter=reference='${registry}:*' -q", returnStdout: true).trim()
+
+                    // If there are any images, remove them (excluding the current image)
+                    if (imageIds) {
+                        echo "Removing previous images: ${imageIds}"
+                        // Remove all images except for the current one
+                        bat """
+                            docker rmi ${imageIds} || true
+                        """
+                    } else {
+                        echo "No previous images found to remove."
+                    }
+                }
+            }
         }
     }
-}
-    }
-
 }
