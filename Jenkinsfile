@@ -31,29 +31,30 @@ pipeline {
         stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Step 1: Get image IDs
-                    def imageIds = bat(
+                    // Step 1: Get the list of image IDs (one per line)
+                    def rawOutput = bat(
                         script: "docker images --format \"{{.ID}}\" --filter=reference='${registry}:*'",
                         returnStdout: true
                     ).trim()
 
-                    if (imageIds) {
-                        // Step 2: Remove current image ID from the list
-                        def currentImageId = dockerImage.id
-                        def imageList = imageIds.split(/\r?\n/).findAll { it != currentImageId }
+                    echo "Raw image list:\n${rawOutput}"
 
-                        if (imageList) {
-                            echo "Removing previous images (excluding current build):\n${imageList.join('\n')}"
+                    // Step 2: Split the image list
+                    def imageList = rawOutput.split(/\r?\n/).findAll { it?.trim() }
 
-                            // Step 3: Loop over each image ID and run a separate rmi command
-                            imageList.each { imageId ->
-                                bat(script: "docker rmi -f ${imageId}")
-                            }
-                        } else {
-                            echo "No old images to remove. Only current build image is present."
+                    // Step 3: Remove the current image from the list
+                    def currentImageId = dockerImage.id
+                    echo "Current image ID: ${currentImageId}"
+
+                    def oldImages = imageList.findAll { it != currentImageId }
+
+                    if (oldImages) {
+                        echo "Removing old images:\n${oldImages.join('\n')}"
+                        oldImages.each { imageId ->
+                            bat(script: "docker rmi -f ${imageId}")
                         }
                     } else {
-                        echo "No previous images found to remove."
+                        echo "No old images to clean up."
                     }
                 }
             }
