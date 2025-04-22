@@ -31,22 +31,24 @@ pipeline {
         stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Step 1: Get the list of image IDs (one per line)
-                    def rawOutput = bat(
+                    // Get image IDs related to the registry
+                    def imageIdsOutput = bat(
                         script: "docker images --format \"{{.ID}}\" --filter=reference='${registry}:*'",
                         returnStdout: true
                     ).trim()
 
-                    echo "Raw image list:\n${rawOutput}"
+                    def imageList = imageIdsOutput.split(/\r?\n/).findAll { it?.trim() }
 
-                    // Step 2: Split the image list
-                    def imageList = rawOutput.split(/\r?\n/).findAll { it?.trim() }
+                    // Get the actual image ID of the current build image
+                    def currentImageIdOutput = bat(
+                        script: "docker inspect --format=\"{{.Id}}\" ${registry}:${BUILD_NUMBER}",
+                        returnStdout: true
+                    ).trim()
 
-                    // Step 3: Remove the current image from the list
-                    def currentImageId = dockerImage.id
-                    echo "Current image ID: ${currentImageId}"
+                    echo "Current image ID: ${currentImageIdOutput}"
+                    echo "All matching image IDs:\n${imageList.join('\n')}"
 
-                    def oldImages = imageList.findAll { it != currentImageId }
+                    def oldImages = imageList.findAll { it != currentImageIdOutput }
 
                     if (oldImages) {
                         echo "Removing old images:\n${oldImages.join('\n')}"
