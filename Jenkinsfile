@@ -53,7 +53,7 @@ pipeline {
                     if (oldImages) {
                         echo "Removing old images:\n${oldImages.join('\n')}"
                         oldImages.each { imageId ->
-                            // Correct the 'docker rmi' command to only take the image IDs
+                            // Correct 'docker rmi' command
                             bat(script: "docker rmi -f ${imageId}")
                         }
                     } else {
