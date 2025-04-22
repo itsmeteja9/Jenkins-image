@@ -31,17 +31,23 @@ pipeline {
         stage('Cleaning up Previous Images from Local Docker Engine') {
             steps {
                 script {
-                    // Get all the image IDs related to this registry (removes previous images)
-                    def imageIds = bat(script: "docker images --filter=reference='${registry}:*' -q", returnStdout: true).trim()
+                    // Get all image IDs that match the registry
+                    def imageIds = bat(
+                        script: "docker images --format \"{{.ID}}\" --filter=reference='${registry}:*'",
+                        returnStdout: true
+                    ).trim()
 
-                    // Check if any images exist
                     if (imageIds) {
-                        echo "Removing previous images: ${imageIds}"
-                        // Now run the FOR loop correctly in Windows batch script
-                        // Split the imageIds by space and run docker rmi for each image
-                        def imageList = imageIds.split('\n')
-                        imageList.each { imageId ->
-                            bat "docker rmi ${imageId}"
+                        def currentImageId = dockerImage.id
+                        def imageList = imageIds.split(/\r?\n/).findAll { it != currentImageId }
+
+                        if (imageList) {
+                            echo "Removing previous images (excluding current build):\n${imageList.join('\n')}"
+                            imageList.each { imageId ->
+                                bat "docker rmi -f ${imageId}"
+                            }
+                        } else {
+                            echo "No old images to remove. Only current build image is present."
                         }
                     } else {
                         echo "No previous images found to remove."
