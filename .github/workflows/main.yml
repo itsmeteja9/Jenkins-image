@@ -98,13 +98,25 @@ jobs:
         if: steps.detect_go.outputs.detected == 'true'
         run: go test ./... > logs.txt 2>&1 || true
 
+      # Docker Project
+      - name: Detect Dockerfile
+        id: detect_docker
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "detected=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Docker image
+        if: steps.detect_docker.outputs.detected == 'true'
+        run: docker build -t repo-image . > logs.txt 2>&1 || true
+
       # Fallback: Generic build
       - name: Check if any build detected
         id: check_build
         run: |
           if [ ! -f "logs.txt" ]; then
             echo "No project type detected. Creating generic logs."
-            echo "No recognized build system found (package.json, requirements.txt, pom.xml, go.mod)" > logs.txt
+            echo "No recognized build system found (package.json, requirements.txt, pom.xml, go.mod, Dockerfile)" > logs.txt
           fi
 
       - name: Save failure context
