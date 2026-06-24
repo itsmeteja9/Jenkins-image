@@ -129,7 +129,7 @@ jobs:
   # RCA Analysis
   rca-analysis:
     needs: build
-    if: failure()
+    if: always()
     uses: itsmeteja9/Agent-POC/.github/workflows/rca-reusable.yml@main
     with:
       tool_repo: itsmeteja9/Agent-POC
